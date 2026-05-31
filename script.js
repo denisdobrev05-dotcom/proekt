@@ -149,6 +149,18 @@ const GEO = {
   belogradchik: [22.68, 43.62]
 };
 
+// Етикети с имена върху картата (отместване, за да не се застъпват точките)
+const MAP_LABELS = {
+  "rila-lakes":  { text: "Седемте езера",   dx: 0,   dy: -13, anchor: "middle" },
+  rila:          { text: "Рилски манастир", dx: 2,   dy: 32,  anchor: "middle" },
+  nessebar:      { text: "Несебър",         dx: -12, dy: 5,   anchor: "end" },
+  plovdiv:       { text: "Пловдив",         dx: 12,  dy: 17,  anchor: "start" },
+  belogradchik:  { text: "Белоградчик",     dx: 14,  dy: 5,   anchor: "start" }
+};
+
+// Столицата като ориентир (не е сред забележителностите)
+const MAP_CAPITAL = { coord: [23.32, 42.70], text: "София" };
+
 // --- Географска проекция към SVG координати ---
 const LON_MIN = 22.36, LON_MAX = 28.61, LAT_MIN = 41.24, LAT_MAX = 44.22;
 const COSLAT = Math.cos((42.73 * Math.PI) / 180); // корекция за дължината
@@ -347,6 +359,24 @@ function renderMap() {
   // Очертанието на страната като плавна затворена крива (Catmull-Rom)
   const pts = BG_BORDER.map(projectGeo);
   $("#bgShape").setAttribute("d", smoothClosedPath(pts));
+
+  // Декор: надпис „Черно море" + столицата София
+  const [capX, capY] = projectGeo(MAP_CAPITAL.coord);
+  const seaY = (MAP_VH * 0.43).toFixed(0);
+  $("#mapDecor").innerHTML = `
+    <text class="map__sea" x="784" y="${seaY}" transform="rotate(-90 784 ${seaY})" text-anchor="middle">ЧЕРНО МОРЕ</text>
+    <text class="map__capital-star" x="${capX.toFixed(1)}" y="${(capY + 6).toFixed(1)}" text-anchor="middle">★</text>
+    <text class="map__label map__capital-label" x="${(capX + 11).toFixed(1)}" y="${(capY + 4).toFixed(1)}">${MAP_CAPITAL.text}</text>
+  `;
+
+  // Имена на градовете/местата до точките
+  $("#mapLabels").innerHTML = LANDMARKS.map(item => {
+    const cfg = MAP_LABELS[item.id];
+    const geo = GEO[item.id];
+    if (!cfg || !geo) return "";
+    const [x, y] = projectGeo(geo);
+    return `<text class="map__label" x="${(x + cfg.dx).toFixed(1)}" y="${(y + cfg.dy).toFixed(1)}" text-anchor="${cfg.anchor}">${cfg.text}</text>`;
+  }).join("");
 
   // Точки на забележителностите (вътре в SVG, в същата координатна система)
   const group = $("#mapPinsSvg");

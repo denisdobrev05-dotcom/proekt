@@ -475,6 +475,38 @@ img { display: block; max-width: 100%; }
   animation: pinPulse 2.2s ease-out infinite;
 }
 .map__pin-hit { fill: transparent; }
+
+/* Етикети с имена върху картата */
+.map__label {
+  font-family: "Manrope", system-ui, sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  fill: var(--ink);
+  stroke: var(--bg-elev);
+  stroke-width: 3.2;
+  stroke-linejoin: round;
+  paint-order: stroke;
+  pointer-events: none;
+}
+.map__capital-label { font-weight: 700; }
+.map__capital-star {
+  font-size: 19px;
+  fill: var(--gold);
+  stroke: #fff;
+  stroke-width: 1.4;
+  paint-order: stroke;
+  pointer-events: none;
+}
+.map__sea {
+  font-family: "Manrope", system-ui, sans-serif;
+  font-size: 14px;
+  font-style: italic;
+  font-weight: 600;
+  letter-spacing: 3px;
+  fill: var(--brand);
+  opacity: 0.8;
+  pointer-events: none;
+}
 .map__pin:hover .map__pin-dot,
 .map__pin:focus-visible .map__pin-dot { r: 9; }
 .map__pin:focus-visible .map__pin-dot { stroke: var(--gold); }
