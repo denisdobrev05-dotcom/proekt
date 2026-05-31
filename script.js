@@ -15,6 +15,7 @@ const LANDMARKS = [
     location: "Рила планина, обл. Кюстендил",
     emoji: "⛪",
     gradient: "linear-gradient(135deg, #2c3e6b 0%, #5b6fa8 45%, #c9a14b 100%)",
+    wiki: ["Rila Monastery"],
     short: "Най-големият и най-известен православен манастир в България.",
     desc: "Основан през X век от свети Иван Рилски, Рилският манастир е духовно сърце на България. Прочут е с пъстрите си стенописи, дървените резби и характерните черно-бели аркади. Включен е в списъка на ЮНЕСКО за световно наследство.",
     facts: [
@@ -34,6 +35,7 @@ const LANDMARKS = [
     location: "Рила планина",
     emoji: "🏔️",
     gradient: "linear-gradient(135deg, #0e7c86 0%, #3fb6c4 50%, #bfeef0 100%)",
+    wiki: ["Seven Rila Lakes"],
     short: "Ледникови езера на над 2000 м височина — едно от чудесата на Балканите.",
     desc: "Група от седем ледникови езера, разположени стъпаловидно в Рила планина. Всяко носи име според формата си — Сълзата, Окото, Бъбрека, Близнака, Трилистника, Рибното и Долното. Гледката от върховете над тях е сред най-впечатляващите в Европа.",
     facts: [
@@ -53,6 +55,7 @@ const LANDMARKS = [
     location: "Черноморие, обл. Бургас",
     emoji: "🏘️",
     gradient: "linear-gradient(135deg, #b5471f 0%, #e08a3c 45%, #f5d27a 100%)",
+    wiki: ["Nesebar", "Old Nesebar"],
     short: "Древен полуостров с над 3000 години история и средновековни църкви.",
     desc: "Несебър е един от най-старите градове в Европа, разположен на малък скалист полуостров. Тесните калдъръмени улички, дървените къщи от епохата на Възраждането и десетките средновековни църкви му носят прозвището „музей под открито небе“. Обект на ЮНЕСКО.",
     facts: [
@@ -72,6 +75,7 @@ const LANDMARKS = [
     location: "Пловдив",
     emoji: "🏛️",
     gradient: "linear-gradient(135deg, #6b3f8a 0%, #b1639d 50%, #f0b9c4 100%)",
+    wiki: ["Ancient Theatre of Philippopolis", "Ancient theatre (Plovdiv)", "Roman theatre of Plovdiv"],
     short: "Римски театър от II век, който и днес е сцена за концерти и спектакли.",
     desc: "Античният театър на Филипопол е един от най-добре запазените римски театри в света. Построен по времето на император Траян, той е побирал около 6000 зрители. Днес продължава да живее — тук се провеждат опери, концерти и фестивали с гледка към Родопите.",
     facts: [
@@ -91,6 +95,7 @@ const LANDMARKS = [
     location: "Стара планина, обл. Видин",
     emoji: "🪨",
     gradient: "linear-gradient(135deg, #8a5a2b 0%, #c98a4b 45%, #e7c79a 100%)",
+    wiki: ["Belogradchik Rocks", "Belogradchik"],
     short: "Причудливи скални образувания и крепост, изваяни от природата.",
     desc: "Поразителни червеникави скални формации, простиращи се на около 30 км. С въображение в тях се разпознават фигури — Конникът, Мадоната, Монасите. Сред скалите е вградена и крепостта Калето. Място, кандидатствало за едно от новите седем природни чудеса на света.",
     facts: [
@@ -114,9 +119,59 @@ const $ = (sel, ctx = document) => ctx.querySelector(sel);
 const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
 
 function artMarkup(item) {
-  return `<div class="card__art" style="background-image:${item.gradient}; display:grid; place-items:center;">
-            <span style="font-size:5rem; filter:drop-shadow(0 6px 14px rgba(0,0,0,.35)); transform:translateY(-12px);">${item.emoji}</span>
+  // Градиентът + емоджито служат като плейсхолдър/fallback, докато
+  // реалната снимка се зареди от Wikipedia (или ако зареждането се провали).
+  return `<div class="card__art" data-art="${item.id}" style="background-image:${item.gradient};">
+            <span class="art__emoji">${item.emoji}</span>
           </div>`;
+}
+
+// --- Зареждане на реални снимки от Wikipedia (CORS, в браузъра) ---
+const photoCache = {}; // id -> url | null
+
+// Лек тъмен слой върху снимките, за да се вписват в стила на сайта.
+const PHOTO_TINT = "linear-gradient(180deg, rgba(16,32,24,0.10) 0%, rgba(14,28,20,0.45) 65%, rgba(12,24,17,0.70) 100%)";
+
+async function fetchWikiPhoto(titles) {
+  for (const title of titles) {
+    const api = "https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*"
+      + "&prop=pageimages&piprop=thumbnail|original&pithumbsize=1200&redirects=1"
+      + "&titles=" + encodeURIComponent(title);
+    try {
+      const res = await fetch(api);
+      if (!res.ok) continue;
+      const data = await res.json();
+      const pages = data?.query?.pages;
+      if (!pages) continue;
+      const page = Object.values(pages)[0];
+      const src = page?.thumbnail?.source || page?.original?.source;
+      if (src) return src;
+    } catch (_) { /* пробваме следващото заглавие */ }
+  }
+  return null;
+}
+
+// Прилага снимка (или оставя градиента) към даден контейнер.
+function applyPhoto(el, src) {
+  if (!el || !src) return;
+  const img = new Image();
+  img.onload = () => {
+    el.style.backgroundImage = `${PHOTO_TINT}, url("${src}")`;
+    el.classList.add("has-photo");
+  };
+  img.src = src; // зареждаме предварително, за да няма мигане
+}
+
+// Зарежда всички снимки веднъж и ги прилага към картите, картата „За проекта“ и кеша.
+async function hydratePhotos() {
+  await Promise.all(LANDMARKS.map(async (item) => {
+    const src = await fetchWikiPhoto(item.wiki || []);
+    photoCache[item.id] = src;
+    if (src) {
+      $$(`.card__art[data-art="${item.id}"]`).forEach(el => applyPhoto(el, src));
+      $$(`.about__tile[data-art="${item.id}"]`).forEach(el => applyPhoto(el, src));
+    }
+  }));
 }
 
 // --- Генериране на картите ---
@@ -174,8 +229,26 @@ const modal = $("#modal");
 function openModal(id) {
   const item = LANDMARKS.find(l => l.id === id);
   if (!item) return;
-  $("#modalMedia").style.backgroundImage = item.gradient;
-  $("#modalMedia").innerHTML = `<div style="height:100%;display:grid;place-items:center;font-size:5.5rem;filter:drop-shadow(0 8px 16px rgba(0,0,0,.4));">${item.emoji}</div>`;
+  const media = $("#modalMedia");
+  const cached = photoCache[item.id];
+  if (cached) {
+    media.style.backgroundImage = `${PHOTO_TINT}, url("${cached}")`;
+    media.innerHTML = "";
+  } else {
+    media.style.backgroundImage = item.gradient;
+    media.innerHTML = `<div style="height:100%;display:grid;place-items:center;font-size:5.5rem;filter:drop-shadow(0 8px 16px rgba(0,0,0,.4));">${item.emoji}</div>`;
+    // Опит за зареждане на снимката и за модала, ако още не е готова.
+    if (cached === undefined) {
+      fetchWikiPhoto(item.wiki || []).then(src => {
+        photoCache[item.id] = src;
+        if (src && modal.classList.contains("is-open") && $("#modalTitle").textContent === item.name) {
+          const i = new Image();
+          i.onload = () => { media.style.backgroundImage = `${PHOTO_TINT}, url("${src}")`; media.innerHTML = ""; };
+          i.src = src;
+        }
+      });
+    }
+  }
   $("#modalTag").textContent = `#${item.rank} · ${item.tagLabel}`;
   $("#modalTitle").textContent = item.name;
   $("#modalLocation").textContent = "📍 " + item.location;
@@ -220,8 +293,8 @@ function renderMap() {
 // --- Галерия „За проекта“ ---
 function renderAbout() {
   $("#aboutGrid").innerHTML = LANDMARKS.slice(0, 4).map(item => `
-    <div class="about__tile" style="background-image:${item.gradient};" title="${item.name}">
-      <div style="height:100%;display:grid;place-items:center;font-size:2.6rem;">${item.emoji}</div>
+    <div class="about__tile" data-art="${item.id}" style="background-image:${item.gradient};" title="${item.name}">
+      <span class="art__emoji art__emoji--sm">${item.emoji}</span>
     </div>
   `).join("");
 }
@@ -277,4 +350,5 @@ document.addEventListener("DOMContentLoaded", () => {
   initScroll();
   initReveal();
   $("#year").textContent = new Date().getFullYear();
+  hydratePhotos(); // зарежда реалните снимки асинхронно
 });
