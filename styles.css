@@ -359,9 +359,23 @@ img { display: block; max-width: 100%; }
   width: 100%; height: 100%;
   background-size: cover;
   background-position: center;
+  display: grid;
+  place-items: center;
   transition: transform 0.8s var(--ease);
 }
 .card:hover .card__art { transform: scale(1.08); }
+
+/* Емоджи плейсхолдър, докато снимката се зареди */
+.art__emoji {
+  font-size: 5rem;
+  filter: drop-shadow(0 6px 14px rgba(0,0,0,.35));
+  transform: translateY(-12px);
+  transition: opacity 0.5s var(--ease);
+}
+.art__emoji--sm { font-size: 2.6rem; transform: none; }
+/* Когато има реална снимка — скриваме емоджито */
+.has-photo .art__emoji { opacity: 0; }
+.about__tile { display: grid; place-items: center; }
 
 .card__rank {
   position: absolute;
