@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Топ 5 на най-впечатляващите забележителности в България — интерактивен пътеводител." />
+  <title>Топ 5 забележителности в България</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Прогрес лента при скролване -->
+  <div class="scroll-progress" id="scrollProgress"></div>
+
+  <!-- Навигация -->
+  <header class="nav" id="nav">
+    <a href="#hero" class="nav__brand">
+      <span class="nav__flag" aria-hidden="true"></span>
+      България<span class="nav__brand-accent">.</span>
+    </a>
+    <nav class="nav__links">
+      <a href="#landmarks">Забележителности</a>
+      <a href="#map">Карта</a>
+      <a href="#about">За проекта</a>
+    </nav>
+    <button class="nav__toggle" id="themeToggle" aria-label="Смяна на тема">
+      <span class="nav__toggle-icon">🌙</span>
+    </button>
+  </header>
+
+  <!-- Hero секция -->
+  <section class="hero" id="hero">
+    <div class="hero__glow"></div>
+    <div class="hero__content">
+      <p class="hero__eyebrow">Интерактивен пътеводител</p>
+      <h1 class="hero__title">
+        Топ <span class="hero__count">5</span> забележителности
+        <br />в <span class="hero__highlight">България</span>
+      </h1>
+      <p class="hero__subtitle">
+        Открий най-впечатляващите места на Балканите — от древни манастири
+        до приказни планински езера. Разгледай, докосни, вдъхнови се.
+      </p>
+      <div class="hero__actions">
+        <a href="#landmarks" class="btn btn--primary">Разгледай сега ↓</a>
+        <a href="#map" class="btn btn--ghost">Виж на картата</a>
+      </div>
+      <dl class="hero__stats">
+        <div><dt>5</dt><dd>уникални места</dd></div>
+        <div><dt>10</dt><dd>обекта на ЮНЕСКО</dd></div>
+        <div><dt>∞</dt><dd>спомени</dd></div>
+      </dl>
+    </div>
+    <div class="hero__scroll" aria-hidden="true">
+      <span></span>
+    </div>
+  </section>
+
+  <!-- Забележителности -->
+  <section class="section" id="landmarks">
+    <div class="section__head">
+      <p class="section__eyebrow">Избрани места</p>
+      <h2 class="section__title">Петте, които трябва да видиш</h2>
+      <p class="section__lead">
+        Подбрахме петте най-знакови български забележителности.
+        Натисни върху карта, за да научиш повече.
+      </p>
+    </div>
+
+    <!-- Филтри -->
+    <div class="filters" id="filters">
+      <button class="filter is-active" data-filter="all">Всички</button>
+      <button class="filter" data-filter="culture">Култура</button>
+      <button class="filter" data-filter="nature">Природа</button>
+      <button class="filter" data-filter="history">История</button>
+    </div>
+
+    <div class="cards" id="cards"><!-- Генерира се с JavaScript --></div>
+  </section>
+
+  <!-- Карта -->
+  <section class="section section--map" id="map">
+    <div class="section__head">
+      <p class="section__eyebrow">Локации</p>
+      <h2 class="section__title">Къде се намират?</h2>
+      <p class="section__lead">Премини с мишката върху точките, за да ги разгледаш.</p>
+    </div>
+    <div class="map" id="mapWrap">
+      <svg class="map__svg" viewBox="0 0 800 480" role="img" aria-label="Карта на България с забележителности">
+        <path id="bgShape" class="map__country" d="" />
+      </svg>
+      <div class="map__pins" id="mapPins"></div>
+      <div class="map__tooltip" id="mapTooltip"></div>
+    </div>
+  </section>
+
+  <!-- За проекта -->
+  <section class="section section--about" id="about">
+    <div class="about">
+      <div class="about__text">
+        <p class="section__eyebrow">За проекта</p>
+        <h2 class="section__title">Малко България, голяма красота</h2>
+        <p>
+          Този сайт е интерактивен пътеводител, създаден да вдъхнови
+          пътешествия из България. Всяка забележителност разказва своя история —
+          от тракийско наследство и средновековни крепости до природни чудеса,
+          оцелели хилядолетия.
+        </p>
+        <p>
+          Разгледай галерията, отвори детайлите и планирай следващото си приключение.
+        </p>
+        <a href="#landmarks" class="btn btn--primary">Обратно към местата</a>
+      </div>
+      <div class="about__grid" id="aboutGrid"></div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <p>Създадено с ❤️ за България · <span id="year"></span></p>
+    <p class="footer__muted">Интерактивен демонстрационен проект.</p>
+  </footer>
+
+  <!-- Модален прозорец -->
+  <div class="modal" id="modal" aria-hidden="true">
+    <div class="modal__backdrop" data-close></div>
+    <div class="modal__dialog" role="dialog" aria-modal="true">
+      <button class="modal__close" data-close aria-label="Затвори">✕</button>
+      <div class="modal__media" id="modalMedia"></div>
+      <div class="modal__body">
+        <span class="modal__tag" id="modalTag"></span>
+        <h3 class="modal__title" id="modalTitle"></h3>
+        <p class="modal__location" id="modalLocation"></p>
+        <p class="modal__desc" id="modalDesc"></p>
+        <ul class="modal__facts" id="modalFacts"></ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
