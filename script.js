@@ -108,11 +108,73 @@ const LANDMARKS = [
   }
 ];
 
-// Опростена форма на България за SVG картата
-const BG_SHAPE =
-  "M70,150 L150,120 L240,110 L320,95 L430,100 L540,90 L650,110 L730,150 " +
-  "L760,210 L730,260 L700,300 L640,330 L560,350 L470,360 L380,345 " +
-  "L300,360 L220,340 L150,300 L100,250 L70,200 Z";
+// Реални очертания на България — последователност от [дължина, ширина]
+// (lon, lat) по границата, по часовниковата стрелка. Проектират се в SVG
+// координати по време на изпълнение, така че формата да е разпознаваема.
+const BG_BORDER = [
+  // Северозапад и река Дунав (запад → изток)
+  [22.62, 44.18], [22.78, 44.13], [22.98, 44.08], [23.10, 43.92], [23.30, 43.85],
+  [23.62, 43.79], [23.92, 43.75], [24.18, 43.70], [24.45, 43.69], [24.78, 43.72],
+  [25.10, 43.62], [25.38, 43.62], [25.65, 43.69], [25.95, 43.84], [26.18, 43.92],
+  [26.55, 44.04], [26.85, 44.06], [27.05, 44.13], [27.26, 44.13],
+  // Североизток (Добруджа) → Черно море
+  [27.65, 43.95], [28.00, 43.84], [28.58, 43.69],
+  // Черноморско крайбрежие (север → юг): нос Шабла, нос Калиакра,
+  // Варненски и Бургаски залив, Странджанско крайбрежие
+  [28.60, 43.53], [28.41, 43.43], [28.47, 43.36], [28.10, 43.38], [28.02, 43.27],
+  [27.92, 43.20], [27.85, 43.05], [27.88, 42.93], [27.85, 42.80], [27.75, 42.70],
+  [27.65, 42.58], [27.72, 42.43], [27.60, 42.25], [27.55, 42.10], [27.78, 42.02],
+  [28.04, 41.98],
+  // Южна граница с Турция (изток → запад)
+  [27.55, 41.98], [27.00, 41.97], [26.62, 41.85], [26.36, 41.71],
+  // Южна граница с Гърция (изток → запад, през Родопите)
+  [26.15, 41.36], [25.85, 41.31], [25.55, 41.31], [25.30, 41.27], [25.10, 41.40],
+  [24.85, 41.39], [24.65, 41.50], [24.50, 41.57], [24.28, 41.51], [24.05, 41.46],
+  [23.75, 41.40], [23.55, 41.38], [23.40, 41.40],
+  // Югозапад — Северна Македония
+  [23.18, 41.38], [23.00, 41.36], [22.95, 41.52], [22.93, 41.70], [22.95, 41.85],
+  [22.88, 41.99], [22.72, 42.16], [22.60, 42.30], [22.45, 42.32], [22.36, 42.32],
+  // Западна граница със Сърбия (юг → север), с Транския издатък
+  [22.43, 42.52], [22.50, 42.70], [22.78, 42.88], [22.62, 43.02], [22.45, 43.12],
+  [22.55, 43.28], [22.58, 43.40], [22.45, 43.52], [22.38, 43.68], [22.47, 43.82],
+  [22.52, 43.96]
+];
+
+// Реални координати [lon, lat] на забележителностите
+const GEO = {
+  rila:         [23.34, 42.13],
+  "rila-lakes": [23.31, 42.20],
+  nessebar:     [27.73, 42.66],
+  plovdiv:      [24.75, 42.14],
+  belogradchik: [22.68, 43.62]
+};
+
+// Етикети с имена върху картата (отместване, за да не се застъпват точките)
+const MAP_LABELS = {
+  "rila-lakes":  { text: "Седемте езера",   dx: 0,   dy: -13, anchor: "middle" },
+  rila:          { text: "Рилски манастир", dx: 2,   dy: 32,  anchor: "middle" },
+  nessebar:      { text: "Несебър",         dx: -12, dy: 5,   anchor: "end" },
+  plovdiv:       { text: "Пловдив",         dx: 12,  dy: 17,  anchor: "start" },
+  belogradchik:  { text: "Белоградчик",     dx: 14,  dy: 5,   anchor: "start" }
+};
+
+// Столицата като ориентир (не е сред забележителностите)
+const MAP_CAPITAL = { coord: [23.32, 42.70], text: "София" };
+
+// --- Географска проекция към SVG координати ---
+const LON_MIN = 22.36, LON_MAX = 28.61, LAT_MIN = 41.24, LAT_MAX = 44.22;
+const COSLAT = Math.cos((42.73 * Math.PI) / 180); // корекция за дължината
+const MAP_PAD = 40;
+const MAP_VW = 800;
+const MAP_SCALE = (MAP_VW - 2 * MAP_PAD) / ((LON_MAX - LON_MIN) * COSLAT);
+const MAP_VH = (LAT_MAX - LAT_MIN) * MAP_SCALE + 2 * MAP_PAD;
+
+function projectGeo([lon, lat]) {
+  return [
+    MAP_PAD + (lon - LON_MIN) * COSLAT * MAP_SCALE,
+    MAP_PAD + (LAT_MAX - lat) * MAP_SCALE
+  ];
+}
 
 // --- Helpers ---
 const $ = (sel, ctx = document) => ctx.querySelector(sel);
@@ -268,25 +330,97 @@ function closeModal() {
 $$("[data-close]").forEach(el => el.addEventListener("click", closeModal));
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
 
-// --- Карта с точки ---
-function renderMap() {
-  $("#bgShape").setAttribute("d", BG_SHAPE);
-  const pins = $("#mapPins");
-  const tooltip = $("#mapTooltip");
-  pins.innerHTML = LANDMARKS.map(item => `
-    <button class="map__pin" style="left:${item.map.x}%; top:${item.map.y}%" data-id="${item.id}" aria-label="${item.name}"></button>
-  `).join("");
+// --- Карта с реални очертания на България и точки ---
+const SVGNS = "http://www.w3.org/2000/svg";
 
-  $$(".map__pin", pins).forEach(pin => {
-    const item = LANDMARKS.find(l => l.id === pin.dataset.id);
-    pin.addEventListener("mouseenter", () => {
+// Превръща поредица от точки в гладка затворена крива чрез
+// Catmull-Rom сплайн, преобразуван в кубични криви на Безие.
+function smoothClosedPath(pts, tension = 6) {
+  const n = pts.length;
+  let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+  for (let i = 0; i < n; i++) {
+    const p0 = pts[(i - 1 + n) % n];
+    const p1 = pts[i];
+    const p2 = pts[(i + 1) % n];
+    const p3 = pts[(i + 2) % n];
+    const c1x = p1[0] + (p2[0] - p0[0]) / tension;
+    const c1y = p1[1] + (p2[1] - p0[1]) / tension;
+    const c2x = p2[0] - (p3[0] - p1[0]) / tension;
+    const c2y = p2[1] - (p3[1] - p1[1]) / tension;
+    d += ` C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+  }
+  return d + " Z";
+}
+
+function renderMap() {
+  const svg = $("#mapSvg");
+  svg.setAttribute("viewBox", `0 0 ${MAP_VW} ${MAP_VH.toFixed(1)}`);
+
+  // Очертанието на страната като плавна затворена крива (Catmull-Rom)
+  const pts = BG_BORDER.map(projectGeo);
+  $("#bgShape").setAttribute("d", smoothClosedPath(pts));
+
+  // Декор: надпис „Черно море" + столицата София
+  const [capX, capY] = projectGeo(MAP_CAPITAL.coord);
+  const seaY = (MAP_VH * 0.43).toFixed(0);
+  $("#mapDecor").innerHTML = `
+    <text class="map__sea" x="784" y="${seaY}" transform="rotate(-90 784 ${seaY})" text-anchor="middle">ЧЕРНО МОРЕ</text>
+    <text class="map__capital-star" x="${capX.toFixed(1)}" y="${(capY + 6).toFixed(1)}" text-anchor="middle">★</text>
+    <text class="map__label map__capital-label" x="${(capX + 11).toFixed(1)}" y="${(capY + 4).toFixed(1)}">${MAP_CAPITAL.text}</text>
+  `;
+
+  // Имена на градовете/местата до точките
+  $("#mapLabels").innerHTML = LANDMARKS.map(item => {
+    const cfg = MAP_LABELS[item.id];
+    const geo = GEO[item.id];
+    if (!cfg || !geo) return "";
+    const [x, y] = projectGeo(geo);
+    return `<text class="map__label" x="${(x + cfg.dx).toFixed(1)}" y="${(y + cfg.dy).toFixed(1)}" text-anchor="${cfg.anchor}">${cfg.text}</text>`;
+  }).join("");
+
+  // Точки на забележителностите (вътре в SVG, в същата координатна система)
+  const group = $("#mapPinsSvg");
+  group.innerHTML = "";
+  const tooltip = $("#mapTooltip");
+  const wrap = $("#mapWrap");
+
+  LANDMARKS.forEach(item => {
+    const geo = GEO[item.id];
+    if (!geo) return;
+    const [x, y] = projectGeo(geo);
+
+    const g = document.createElementNS(SVGNS, "g");
+    g.setAttribute("class", "map__pin");
+    g.setAttribute("data-id", item.id);
+    g.setAttribute("tabindex", "0");
+    g.setAttribute("role", "button");
+    g.setAttribute("aria-label", item.name);
+    g.innerHTML = `
+      <circle class="map__pin-ring" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6" />
+      <circle class="map__pin-dot"  cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6" />
+      <circle class="map__pin-hit"  cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="16" />
+    `;
+    group.appendChild(g);
+
+    const showTip = () => {
+      const dot = g.querySelector(".map__pin-dot");
+      const r = dot.getBoundingClientRect();
+      const w = wrap.getBoundingClientRect();
       tooltip.textContent = `${item.emoji} ${item.name}`;
-      tooltip.style.left = pin.style.left;
-      tooltip.style.top = pin.style.top;
+      tooltip.style.left = (r.left + r.width / 2 - w.left) + "px";
+      tooltip.style.top = (r.top - w.top) + "px";
       tooltip.classList.add("is-visible");
+    };
+    const hideTip = () => tooltip.classList.remove("is-visible");
+
+    g.addEventListener("mouseenter", showTip);
+    g.addEventListener("mouseleave", hideTip);
+    g.addEventListener("focus", showTip);
+    g.addEventListener("blur", hideTip);
+    g.addEventListener("click", () => openModal(item.id));
+    g.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openModal(item.id); }
     });
-    pin.addEventListener("mouseleave", () => tooltip.classList.remove("is-visible"));
-    pin.addEventListener("click", () => openModal(item.id));
   });
 }
 

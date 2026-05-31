@@ -88,10 +88,18 @@
       <p class="section__lead">Премини с мишката върху точките, за да ги разгледаш.</p>
     </div>
     <div class="map" id="mapWrap">
-      <svg class="map__svg" viewBox="0 0 800 480" role="img" aria-label="Карта на България с забележителности">
+      <svg class="map__svg" id="mapSvg" viewBox="0 0 800 480" role="img" aria-label="Карта на България с забележителности">
+        <defs>
+          <linearGradient id="bgFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="var(--brand)" stop-opacity="0.22" />
+            <stop offset="100%" stop-color="var(--brand)" stop-opacity="0.06" />
+          </linearGradient>
+        </defs>
         <path id="bgShape" class="map__country" d="" />
+        <g id="mapDecor"></g>
+        <g id="mapPinsSvg"></g>
+        <g id="mapLabels"></g>
       </svg>
-      <div class="map__pins" id="mapPins"></div>
       <div class="map__tooltip" id="mapTooltip"></div>
     </div>
   </section>
