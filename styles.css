@@ -451,37 +451,37 @@ img { display: block; max-width: 100%; }
 }
 .map__svg { width: 100%; height: auto; display: block; }
 .map__country {
-  fill: color-mix(in srgb, var(--brand) 14%, var(--bg-elev));
+  fill: url(#bgFill);
   stroke: var(--brand);
-  stroke-width: 2;
+  stroke-width: 2.5;
   stroke-linejoin: round;
+  stroke-linecap: round;
+  filter: drop-shadow(0 8px 16px rgba(20,60,40,0.15));
 }
-.map__pins { position: absolute; inset: 1.5rem; }
-.map__pin {
-  position: absolute;
-  width: 18px; height: 18px;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: var(--accent);
-  border: 3px solid #fff;
-  box-shadow: 0 4px 10px -2px rgba(0,0,0,.4);
-  cursor: pointer;
-  transition: transform 0.25s var(--ease);
+/* Точки върху SVG картата */
+.map__pin { cursor: pointer; outline: none; }
+.map__pin-dot {
+  fill: var(--accent);
+  stroke: #fff;
+  stroke-width: 3;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,.4));
+  transition: r 0.22s var(--ease);
 }
-.map__pin::after {
-  content: "";
-  position: absolute;
-  inset: -8px;
-  border-radius: 50%;
-  border: 2px solid var(--accent);
-  opacity: 0.6;
-  animation: pinPulse 2s ease-out infinite;
+.map__pin-ring {
+  fill: var(--accent);
+  opacity: 0.5;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pinPulse 2.2s ease-out infinite;
 }
+.map__pin-hit { fill: transparent; }
+.map__pin:hover .map__pin-dot,
+.map__pin:focus-visible .map__pin-dot { r: 9; }
+.map__pin:focus-visible .map__pin-dot { stroke: var(--gold); }
 @keyframes pinPulse {
-  0% { transform: scale(0.6); opacity: 0.7; }
-  100% { transform: scale(1.8); opacity: 0; }
+  0%   { transform: scale(0.6); opacity: 0.6; }
+  100% { transform: scale(2.6); opacity: 0; }
 }
-.map__pin:hover { transform: translate(-50%, -50%) scale(1.4); }
 .map__tooltip {
   position: absolute;
   z-index: 5;
